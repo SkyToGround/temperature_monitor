@@ -10,7 +10,11 @@ class TemperatureSensor(models.Model):
     value = models.FloatField("The current (last) temperature in degrees C.", default=-200)
 
     def __str__(self):
-        return f"{self.long_name}: {self.value:.2f}℃"
+        return f"{self.long_name}: {self.value:.2f} ℃"
+
+    @property
+    def temperature(self):
+        return f"{self.value:.1f} ℃"
 
 
 class Temperatures(models.Model):

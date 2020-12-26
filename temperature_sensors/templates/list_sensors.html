@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+S. Pårup: Alla sensorer
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" type="text/css" href="{% static "DataTables/datatables.min.css" %}"/>
+{% endblock %}
+
+{% block content %}
+<h1>Alla temperatursensorer</h1>
+
+
+<table id="sensor_table" class="table table-striped">
+	<thead>
+		<tr>
+			<th data-sortable="true">Id</th>
+			<th data-sortable="true">Namn</th>
+			<th>Senaste värde</th>
+			<th class="hidden-phone">Tidstämpel</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for sens in sensors %}
+		<tr>
+			<td>
+				{{sens.id}}
+			</td>
+			<td>
+				<a href="/admin/temperature_sensors/temperaturesensor/{{sens.id}}/">{{sens.long_name}}</a>
+			</td>
+			<td>
+				<a id="{{sens.short_name}}_value" href="#" onclick="showDataPlot('{{sens.long_name}}', 'http://192.168.32.15:3000/d/dS0wr1xMk/test?orgId=1&from=now-24h&to=now&refresh=5s&var-sensor_id={{sens.id}}&viewPanel=2')">{{sens.temperature}}</a>
+			</td>
+			<td id="{{sens.short_name}}_timestamp">
+				{{sens.last_update}}
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% endblock %}
+{% block modal %}
+<div class="modal hide fade" id="plotModal" tabindex="-1" role="dialog">
+<div class="modal-dialog modal-lg" role="document">
+	<div class="modal-content">
+	<div class="modal-header">
+		<h5 class="modal-title" id="ModalTitle">Modal title</h5>
+		<button type="button" class="close" id="closeWidget" aria-label="Close">
+		<span aria-hidden="true">&times;</span>
+		</button>
+	</div>
+	<div class="modal-body">
+		<iframe id="DataFrame" src="" width="100%" height="400" frameborder="0"></iframe>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-primary" id="closeButton" data-dismiss="modal">Close</button>
+	</div>
+	</div>
+</div>
+</div>
+{% endblock %}
+
+{% block end_script %}
+<script type="text/javascript" src="{% static "DataTables/datatables.min.js" %}"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+	$('#sensor_table').DataTable({
+		"paging":   false,
+		"bStateSave": true,
+		"fnStateSave": function (oSettings, oData) {
+			localStorage.setItem( 'DataTables', JSON.stringify(oData) );
+		},
+		"fnStateLoad": function (oSettings) {
+			return JSON.parse( localStorage.getItem('DataTables') );
+		}
+	});
+} );
+
+var clockTimeoutID;
+
+function parseStatus(json_text) {
+	var jsonData = JSON.parse(json_text);
+	for (var key in jsonData) {
+		try {
+			document.getElementById(key + "_value").innerHTML = jsonData[key]["value"];
+			document.getElementById(key + "_timestamp").innerHTML = jsonData[key]["timestamp"];
+		} catch (err) {
+			
+		}
+	}
+}
+
+function getValues () {
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (xmlhttp.readyState == 4) {
+			if (xmlhttp.status == 200) {
+				parseStatus(xmlhttp.responseText);
+				clockTimeoutID = setTimeout("getValues()", 20000);
+			}
+			else {
+			}
+		}
+	}
+	xmlhttp.open('GET', '/sensor_values', true);
+	xmlhttp.send(null);
+}
+
+function killClock () {
+	clearTimeout(clockTimeoutID);
+}
+
+function showDataPlot(FullName, URL) {
+	document.getElementById("ModalTitle").innerHTML = FullName;
+	document.getElementById("DataFrame").setAttribute("src", URL);
+	$('#plotModal').modal('show');
+}
+
+window.onunload = killClock;
+window.onload = getValues;
+$('#closeButton').on('click', function(event) {
+	$('#plotModal').modal('hide');
+});
+$('#closeWidget').on('click', function(event) {
+	$('#plotModal').modal('hide');
+});
+</script>
+{% endblock %}
+

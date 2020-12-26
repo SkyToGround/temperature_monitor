@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+    {% load static %}
+		<meta charset="utf-8">
+		<title>{% block title %}Temperaturen i Södra Pårup{% endblock %}</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="description" content="temperature data">
+		<meta name="author" content="Jonas Nilsson">
+		<link href="{% static "css/bootstrap.min.css" %}" rel="stylesheet">
+		{% block head %}
+		{% endblock %}
+	</head>
+
+	<body>
+	<nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+	  <a class="navbar-brand" href="#">Södra Pårup</a>
+	  <button class="navbar-toggler" type="button" data-toggle="collapse">
+		<span class="navbar-toggler-icon"></span>
+	  </button>
+
+	  <div class="collapse navbar-collapse">
+		<ul class="navbar-nav mr-auto">
+		  <li class="nav-item {%if loc_index %}active{% endif %}">
+			<a class="nav-link" href="/">Hem</a>
+		  </li>
+		  <li class="nav-item dropdown">
+			<a class="nav-link dropdown-toggle" href="overview" data-toggle="dropdown">Översikt</a>
+			<div class="dropdown-menu">
+			  <a class="dropdown-item" href="#">Översikt 1</a>
+			  <a class="dropdown-item" href="#">Översikt 2</a>
+			  <a class="dropdown-item" href="#">Översikt 3</a>
+			</div>
+		  </li>
+		  <li class="nav-item">
+			<a class="nav-link {%if loc_list %}active{% endif %}" href="/list_sensors/">Alla sensorer</a>
+		  </li>
+		  <li class="nav-item dropdown {%if loc_hist %}active{% endif %}">
+			<a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">Historisk data</a>
+			<div id="historicalDiv" class="dropdown-menu">
+			  <a class="dropdown-item" href="/grafana/">Grafana/Redigera</a>
+			</div>
+		  </li>
+		  
+		  <li class="nav-item">
+			<a class="nav-link" href="/admin/">Inställningar</a>
+		  </li>
+		</ul>
+	  </div>
+	</nav>
+		
+		<div class="container-fluid">
+			{% block content%}
+			{% endblock %}
+		</div>
+		{% block modal %}
+		{% endblock %}
+	</body>
+	<script src="{% static "js/jquery-3.3.1.min.js" %}"></script>  
+	<script src="{% static "js/bootstrap.min.js" %}"></script>
+	{% block end_script %}
+	{% endblock %}
+	<script type="text/javascript">
+	function addDashMenuItems(JSON_text) {
+	  JsonData = JSON.parse(JSON_text);
+	  var Menu = document.getElementById("historicalDiv");
+	  for (var key in JsonData) {
+		var Node = document.createElement("a");
+		Node.setAttribute("class", "dropdown-item");
+		Node.setAttribute("href", "/dashboard/" + JsonData[key]["id"] + "/");
+		var TextNode = document.createTextNode(JsonData[key]["title"]);
+		Node.appendChild(TextNode);
+		Menu.appendChild(Node);
+	  }
+	}
+	function getDashboards() {
+	  var xmlhttp = new XMLHttpRequest();
+	  xmlhttp.onreadystatechange = function() {
+		  if (xmlhttp.readyState == 4) {
+			  if (xmlhttp.status == 200) {
+				  addDashMenuItems(xmlhttp.responseText);
+			  }
+		  }
+	  }
+	  xmlhttp.open('GET', '/list_dashboards', true);
+	  xmlhttp.send(null);
+	}
+<!--	getDashboards();-->
+	</script>
+</html>
