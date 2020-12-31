@@ -9,7 +9,7 @@ from temperature_sensors.models import TemperatureSensor, Temperatures
 import time
 import pytz
 
-SENSOR_ROOT = "/home/jonas/owfs/"
+SENSOR_ROOT = "/run/owfs/"
 SENSOR_REPEAT_TIME = timedelta(seconds=60)
 
 

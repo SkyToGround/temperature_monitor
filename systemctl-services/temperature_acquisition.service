@@ -1,0 +1,13 @@
+[Unit]
+Description=Collect temperature data from 1-wire sensors
+
+[Service]
+Type=simple
+NotifyAccess=all
+ExecStart=python3 temperature_collector.py
+RuntimeDirectory=/sparup_site/temperature_monitor
+After=owfs.service
+User=data_acquisition
+
+[Install]
+WantedBy=multi-user.target

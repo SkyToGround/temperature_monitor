@@ -21,10 +21,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'ns0vgkv3cn6qm^i=kxh0s9*af8ppvuzkknh56wsy#1c-ud0@4+'
+try:
+    SECRET_KEY
+except NameError:
+    SECRET_FILE = 'secret.txt'
+    try:
+        SECRET_KEY = open(SECRET_FILE).read().strip()
+    except IOError:
+        try:
+            import random
+            SECRET_KEY = ''.join([random.SystemRandom().choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(50)])
+            secret = open(SECRET_FILE, 'w')
+            secret.write(SECRET_KEY)
+            secret.close()
+        except IOError:
+            Exception('Please create a %s file with random characters \
+            to generate your secret key!' % SECRET_FILE)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -79,10 +94,10 @@ WSGI_APPLICATION = 'temperature_monitor_site.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': "temperature_site",
-        'USER': 'django',
-        'PASSWORD': 'some_password',
-        'HOST': '192.168.32.15',
+        'NAME': "temperature_monitor",
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
     }
 }
 
@@ -129,4 +144,4 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
-IMAGE_STORAGE_ROOT = "/Users/jonasnilsson/Documents/temperature_monitor/images/"
+IMAGE_STORAGE_ROOT = "/sparup_site/camera_images/"
