@@ -1,11 +1,10 @@
 [Unit]
-Description=Collect temperature data from 1-wire sensors
-After=owfs.service
+Description=Collect images from cameras
 
 [Service]
 Type=simple
 NotifyAccess=all
-ExecStart=python3 temperature_collector.py
+ExecStart=python3 image_collector.py
 WorkingDirectory=/sparup_site/temperature_monitor
 User=data_acquisition
 
