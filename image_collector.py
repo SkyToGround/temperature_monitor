@@ -25,6 +25,8 @@ def main():
                 img = requests.get(camera.image_address, auth=login_credentials, timeout=10)
             except requests.ConnectTimeout:
                 continue
+            except requests.ConnectionError:
+                continue
             image_time = datetime.now().utcnow().replace(tzinfo=pytz.utc)
             if img.status_code != 200:
                 continue
