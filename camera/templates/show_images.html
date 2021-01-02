@@ -6,18 +6,63 @@ S. Pårup: Kamerabilder
 
 {% block head %}
 <link rel="stylesheet" type="text/css" href="{% static "dtsel/dtsel.css" %}"/>
+<style>
+	.web-cam-img{
+     width:100%;
+     max-width:3000px;
+ }
+ .top-buffer { margin-top:20px; }
+ .top-buffer-sm { margin-top:10px; }
+</style>
 {% endblock %}
 
 {% block content %}
-<h1>Kamerabilder</h1>
-<b>Kamera:</b>
-<select class="form-control">
-	{% for camera in cameras %}
-	<option>{{camera.name}}</option>
-	{% endfor %}
-</select>
-<b>Tidstämpel:</b>
-<input type="text" name="date_field" value="{{now}}">
+<div class="jumbotron text-center">
+  <h1>Kamerabilder</h1>
+</div>
+<div class="container">
+  <div class="row form-group">
+	  <div class="col-sm-4">
+		  <label for="camera" class="form-label">Kamera</label>
+		  <select class="form-select" id="camera" onchange="getImageFromId();">
+			{% for camera in cameras %}
+			<option value="{{camera.id}}">{{camera.name}}</option>
+			{% endfor %}
+		  </select>
+	  </div>
+	  <div class="col-sm-4">
+	  </div>
+	  <div class="col-sm-4" id="datepicker">
+		  <label for="timestamp" class="form-label">Tidstämpel</label>
+		  <input type="text" name="date_field" class="form-control" value="{{now}}" id="timestamp">
+	  </div>
+  </div>
+	<div class="row">
+		<div class="col-sm-2 top-buffer-sm">
+			<button type="button" class="btn btn-primary" onclick="changeImageWithOffset(-30*60);">-30 min</button>
+		</div>
+		<div class="col-sm-2 top-buffer-sm">
+			<button type="button" class="btn btn-primary" onclick="changeImageWithOffset(-5*60);">-5 min</button>
+		</div>
+		<div class="col-sm-2 top-buffer-sm">
+			<button type="button" class="btn btn-primary" onclick="changeImageWithOffset(-60);">-1 min</button>
+		</div>
+		<div class="col-sm-2 top-buffer-sm">
+			<button type="button" class="btn btn-primary" onclick="changeImageWithOffset(60);">+1 min</button>
+		</div>
+		<div class="col-sm-2 top-buffer-sm">
+			<button type="button" class="btn btn-primary" onclick="changeImageWithOffset(5*60);">+5 min</button>
+		</div>
+		<div class="col-sm-2 top-buffer-sm">
+			<button type="button" class="btn btn-primary" onclick="changeImageWithOffset(30*60);">+30 min</button>
+		</div>
+	</div>
+	<div class="row top-buffer">
+		<div class="col-sm-12">
+			<img src="{{ request.path }}/../get_image/2/" id="camera_image" alt="Web-cam image" class="web-cam-img">
+		</div>
+	</div>
+</div>
 {% endblock %}
 
 {% block end_script %}
@@ -25,11 +70,96 @@ S. Pårup: Kamerabilder
 <script type="text/javascript">
 $(document).ready(function() {
 	instance = new dtsel.DTS('input[name="date_field"]',  {
-    direction: 'BOTTOM',
-    dateFormat: "yyyy-mm-dd",
-    showTime: true,
-    timeFormat: "HH:MM:SS"
-});
+    	direction: 'BOTTOM',
+    	dateFormat: "yyyy-mm-dd",
+    	showTime: true,
+    	timeFormat: "HH:MM:SS"
 	});
+});
+
+var lastDatetimeValue = document.getElementById('timestamp').value;
+
+var currentImageId = 0;
+function processImageId(image_id) {
+	var image_element = document.getElementById('camera_image');
+	currentImageId = image_id;
+	image_element.src = "{{ request.path }}/../get_image/" + image_id + "/";
+}
+
+function changeImageWithOffset(offset) {
+	requestNewImageId(currentImageId, offset);
+}
+
+function requestDateTime(image_id) {
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (xmlhttp.readyState == 4) {
+			if (xmlhttp.status == 200) {
+				json_res = JSON.parse(xmlhttp.responseText);
+				lastDatetimeValue = json_res.datetime_string;
+				document.getElementById('timestamp').value = json_res.datetime_string;
+			}
+		}
+	}
+	xmlhttp.open('GET', '/get_timestamp/' + image_id + "/", true);
+	xmlhttp.send(null);
+}
+
+function requestNewImageId(image_id, offset) {
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (xmlhttp.readyState == 4) {
+			if (xmlhttp.status == 200) {
+				processImageId(xmlhttp.responseText);
+				requestDateTime(xmlhttp.responseText);
+			}
+		}
+	}
+	xmlhttp.open('GET', '/get_offset_image_id/' + image_id + "/" + offset + "/", true);
+	xmlhttp.send(null);
+}
+
+function getImageFromId() {
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (xmlhttp.readyState == 4) {
+			if (xmlhttp.status == 200) {
+				processImageId(xmlhttp.responseText);
+			}
+		}
+	}
+	var camera_element = document.getElementById('camera');
+	var camera_id = camera_element.value;
+	var currentDatetimeValue = document.getElementById('timestamp').value.replace(", ", "T");
+	if (!isDate(currentDatetimeValue)) {
+		return;
+	}
+	var timestamp = new Date(currentDatetimeValue);
+	xmlhttp.open('GET', '/get_image_id/' + camera_id + "/" + Math.floor(timestamp.getTime() / 1000) + "/", true);
+	xmlhttp.send(null);
+}
+
+function isDate(date) {
+    return (new Date(date) !== "Invalid Date") && !isNaN(new Date(date));
+}
+
+function checkDateTime() {
+	var currentDatetimeValue = document.getElementById('timestamp').value;
+	if (!isDate(currentDatetimeValue.replace(", ", "T"))) {
+		document.getElementById('timestamp').classList.add("text-danger");
+		window.setTimeout(checkDateTime, 50);
+		return;
+	} else {
+		document.getElementById('timestamp').classList.remove("text-danger");
+	}
+	if (lastDatetimeValue != currentDatetimeValue) {
+		lastDatetimeValue = currentDatetimeValue;
+		getImageFromId();
+	}
+	window.setTimeout(checkDateTime, 50);
+}
+
+window.onload = getImageFromId;
+window.setTimeout(checkDateTime, 50);
 </script>
 {% endblock %}
