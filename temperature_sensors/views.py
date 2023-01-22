@@ -16,7 +16,7 @@ def list_sensors(request):
     for g in all_groups:
         grouped_sensors = TemperatureSensor.objects.filter(group=g)
         ret_dict["groups"].append({"groupname": g.name, "sensors":grouped_sensors})
-    ungrouped_sensors = TemperatureSensor.objects.filter(group=0)
+    ungrouped_sensors = TemperatureSensor.objects.filter(group__isnull=True)
     ret_dict["groups"].append({"groupname": "Övriga", "sensors": ungrouped_sensors})
 
     return HttpResponse(index_page_template.render(ret_dict), content_type="text/html")
