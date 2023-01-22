@@ -9,9 +9,9 @@ S. Pårup: Alla sensorer
 {% endblock %}
 
 {% block content %}
-<h1>Alla temperatursensorer</h1>
 
-
+{% for group in groups %}
+<h2>{{group.groupname}}</h2>
 <table id="sensor_table" class="table table-striped">
 	<thead>
 		<tr>
@@ -22,7 +22,7 @@ S. Pårup: Alla sensorer
 		</tr>
 	</thead>
 	<tbody>
-		{% for sens in sensors %}
+		{% for sens in group.sensors %}
 		<tr>
 			<td>
 				{{sens.id}}
@@ -40,6 +40,7 @@ S. Pårup: Alla sensorer
 		{% endfor %}
 	</tbody>
 </table>
+{% endfor %}
 {% endblock %}
 {% block modal %}
 <div class="modal hide fade" id="plotModal" tabindex="-1" role="dialog">

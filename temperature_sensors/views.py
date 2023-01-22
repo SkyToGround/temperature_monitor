@@ -2,7 +2,7 @@ from django.template import Context, loader, RequestContext
 from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
 
-from temperature_sensors.models import TemperatureSensor
+from temperature_sensors.models import TemperatureSensor, TemperatureSensorGroup
 import json
 import pytz
 import tzlocal
@@ -11,8 +11,14 @@ import tzlocal
 @never_cache
 def list_sensors(request):
     index_page_template = loader.get_template("list_sensors.html")
-    all_sensors = TemperatureSensor.objects.all()
-    ret_dict = {"sensors": all_sensors, "loc_list": True}
+    ret_dict = {"groups": [], "loc_list": True}
+    all_groups = TemperatureSensorGroup.objects.order_by("order")
+    for g in all_groups:
+        grouped_sensors = TemperatureSensor.objects.filter(group=g)
+        ret_dict["groups"].append({"groupname": g.name, "sensors":grouped_sensors})
+    ungrouped_sensors = TemperatureSensor.objects.filter(group=0)
+    ret_dict["groups"].append({"groupname": "Övriga", "sensors": ungrouped_sensors})
+
     return HttpResponse(index_page_template.render(ret_dict), content_type="text/html")
 
 
